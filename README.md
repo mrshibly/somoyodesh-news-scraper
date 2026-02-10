@@ -1,8 +1,10 @@
 # 📰 Shomoy o desh News Scraper
 
+<img width="600" height="200" alt="image" src="https://github.com/user-attachments/assets/6b835db9-aafa-471d-844c-746d8b28b0b2" />
+
 Automated daily Bangla news reporter for **সময় ও দেশ** (somoyodesh.com). It scrapes, summarizes in professional journalism tone, and delivers a branded newsletter via email.
 
-> **Tagline:** দেশ ও মানুষের কথা বলি
+<img width="4492" height="1492" alt="image" src="https://github.com/user-attachments/assets/18a377f8-d7bc-44ef-adef-35353d85d8a8" />
 
 ## 🎯 Features
 
