@@ -1,6 +1,5 @@
-# 📰 Shomoy o desh News Scraper
-
-<img width="600" height="200" alt="image" src="https://github.com/user-attachments/assets/6b835db9-aafa-471d-844c-746d8b28b0b2" />
+# 📰 সময় ও দেশ News Scraper
+<img width="1200" height="400" alt="download" src="https://github.com/user-attachments/assets/1d414d6c-cfed-483d-bbc3-02d1190e7f0b" />
 
 Automated daily Bangla news reporter for **সময় ও দেশ** (somoyodesh.com). It scrapes, summarizes in professional journalism tone, and delivers a branded newsletter via email.
 
