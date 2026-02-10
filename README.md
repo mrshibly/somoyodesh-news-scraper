@@ -1,5 +1,4 @@
 # 📰 সময় ও দেশ News Scraper
-<img width="1200" height="400" alt="download" src="https://github.com/user-attachments/assets/1d414d6c-cfed-483d-bbc3-02d1190e7f0b" />
 
 Automated daily Bangla news reporter for **সময় ও দেশ** (somoyodesh.com). It scrapes, summarizes in professional journalism tone, and delivers a branded newsletter via email.
 
