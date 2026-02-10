@@ -15,8 +15,8 @@ def get_groq_api_key():
     """Get Groq API key from environment."""
     return os.getenv("GROQ_API_KEY")
 
-def summarize_with_gemini(title, text, retries=3):
-    """Generate a Bangla news report and translate title using Gemini with retries."""
+def summarize_with_gemini(title, text, retries=1):
+    """Generate a Bangla news report using Gemini with minimal retries for speed."""
     for attempt in range(retries + 1):
         try:
             api_key = get_gemini_api_key()
@@ -30,9 +30,9 @@ def summarize_with_gemini(title, text, retries=3):
             নিচের সংবাদটি পড়ুন এবং এটি নিয়ে একটি আকর্ষণীয় সংবাদ প্রতিবেদন লিখুন। 
             
             শর্তাবলী:
-            ১. মূল শিরোনাম এবং প্রতিবেদন—উভয়ই অবশ্যই সম্পূর্ণ বাংলায় হতে হবে (Input যে ভাষাতেই হোক না কেন)।
+            ১. মূল শিরোনাম এবং প্রতিবেদন—উভয়ই অবশ্যই সম্পূর্ণ বাংলায় হতে হবে।
             ২. রিপোর্টটি অন্তত ৩-৪টি বাক্যের একটি সুন্দর অনুচ্ছেডে লিখুন।
-            ৩. টোনটি তথ্যবহুল এবং সংবাদসুলভ (Journalistic) হতে হবে।
+            ৩. টোনটি তথ্যবহুল এবং সংবাদসুলভ হতে হবে।
             ৪. নিচের ফরমেটে উত্তর দিন:
             শিরোনাম: [বাংলার শিরোনাম]
             প্রতিবেদন: [বাংলার প্রতিবেদন]
@@ -54,16 +54,15 @@ def summarize_with_gemini(title, text, retries=3):
             
         except Exception as e:
             err_str = str(e)
-            if "429" in err_str or "exhausted" in err_str.lower():
-                wait_time = 30 * (attempt + 1)
-                print(f"  ⏳ Gemini rate limit (429), retrying in {wait_time}s...")
-                time.sleep(wait_time)
+            if ("429" in err_str or "exhausted" in err_str.lower()) and attempt < retries:
+                print(f"  ⏳ Gemini rate limit, quick retry in 5s...")
+                time.sleep(5)
                 continue
-            print(f"  ⚠️  Gemini failed: {err_str[:80]}...")
+            print(f"  ⚠️  Gemini failed: {err_str[:50]}...")
             return None
 
-def summarize_with_groq(title, text, retries=2):
-    """Generate a Bangla news report and translate title using Groq with retries."""
+def summarize_with_groq(title, text, retries=1):
+    """Generate a Bangla news report using Groq with minimal retries."""
     for attempt in range(retries + 1):
         try:
             api_key = get_groq_api_key()
@@ -91,7 +90,7 @@ def summarize_with_groq(title, text, retries=2):
             response = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=[
-                    {"role": "system", "content": "You are a professional reporter. Respond strictly in Bangla in the requested format."},
+                    {"role": "system", "content": "You are a professional reporter. Respond strictly in Bangla."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.4,
@@ -107,36 +106,33 @@ def summarize_with_groq(title, text, retries=2):
         except Exception as e:
             err_str = str(e)
             if ("429" in err_str or "rate_limit" in err_str.lower()) and attempt < retries:
-                wait_time = 15 * (attempt + 1)
-                print(f"  ⏳ Groq rate limit (429), retrying in {wait_time}s...")
-                time.sleep(wait_time)
+                print(f"  ⏳ Groq rate limit, quick retry in 3s...")
+                time.sleep(3)
                 continue
-            print(f"  ⚠️  Groq failed: {err_str[:80]}...")
+            print(f"  ⚠️  Groq failed: {err_str[:50]}...")
             return None
 
 def fallback_summarize(text):
     """Simple fallback: Use first 2-3 sentences."""
-    sentences = text.split('।')  # Bangla sentence separator
+    sentences = text.split('।')
     summary = '।'.join(sentences[:2]).strip()
     if summary:
         summary += '।'
     else:
         summary = text[:150] + '...'
-    print("  ⚠️  Using simple truncation (both APIs failed)")
+    print("  ⚠️  Using simple truncation (fast fallback)")
     return summary
 
 def process_article(article_title, article_text):
     """Process an article to ensure title and report are in Bangla."""
-    
-    # Try Gemini first
+    # Try Gemini
     result = summarize_with_gemini(article_title, article_text)
     
-    # Fall back to Groq
+    # Try Groq
     if not result:
         result = summarize_with_groq(article_title, article_text)
         
     if result:
-        # Parse result (Format: শিরোনাম: ... প্রতিবেদন: ...)
         lines = result.split('\n')
         final_title = article_title
         final_report = ""
@@ -148,22 +144,17 @@ def process_article(article_title, article_text):
             elif "প্রতিবেদন:" in line_clean or "প্রতিবেদন :" in line_clean:
                 final_report = line_clean.split(":", 1)[1].strip()
             elif line_clean and not final_report and not any(tag in line_clean for tag in ["শিরোনাম:", "শিরোনাম :", "সংবাদ:", "সংবাদ :"]):
-                # Catch-all for extra lines
-                if not any(tag in line_clean for tag in ["শিরোনাম:", "প্রতিবেদন:"]):
-                    final_report += line_clean + " "
+                final_report += line_clean + " "
         
         if final_report:
-            # Clean up potential markdown artifacts
             final_title = final_title.replace("**", "").replace("#", "").strip()
             final_report = final_report.replace("**", "").strip()
             return final_title, final_report
 
-    # Last resort fallback (truncation)
-    summary = fallback_summarize(article_text)
-    return article_title, summary
+    return article_title, fallback_summarize(article_text)
 
 def summarize_articles(articles):
-    """Summarize a list of articles ensuring Bangla content."""
+    """Summarize articles with minimal delay for high speed."""
     summarized = []
     
     for i, article in enumerate(articles, 1):
@@ -177,13 +168,12 @@ def summarize_articles(articles):
             "url": article["url"]
         })
         
-        # Consistent delay to respect API limits (6 seconds = 10 RPM)
-        time.sleep(6)
+        # Reduced delay from 6s to 1s for much faster execution
+        time.sleep(1)
     
     return summarized
 
 if __name__ == "__main__":
-    # Test with sample text
-    sample = "রাজধানী ঢাকায় আজ নতুন মেট্রোর উদ্বোধন হয়েছে।"
-    title, report = process_article("New Metro", sample)
+    sample = "রাজধানী ঢাকায় মেট্রো রেলের নতুন লাইন উদ্বোধন করা হয়েছে।"
+    title, report = process_article("Metro Update", sample)
     print(f"\nTitle: {title}\nReport: {report}")
